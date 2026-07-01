@@ -90,20 +90,18 @@ changeKeyBtn.addEventListener('click', openApiKeyModal);
 let conversationHistory = [];
 let isPlanning = false;
 
-// ---- Map Picker (destination selector) ----
-const CITY_MAP = {
-  '경기도':   ['수원', '성남', '용인', '고양', '파주', '가평', '포천', '여주'],
-  '강원도':   ['춘천', '강릉', '속초', '원주', '평창', '정선', '양양', '삼척'],
-  '충청북도': ['청주', '충주', '제천', '단양', '보은', '영동'],
-  '충청남도': ['천안', '공주', '부여', '보령', '서산', '태안', '아산'],
-  '전라북도': ['전주', '군산', '남원', '무주', '부안', '정읍', '고창'],
-  '전라남도': ['여수', '순천', '목포', '담양', '보성', '해남', '완도', '구례'],
-  '경상북도': ['경주', '안동', '포항', '문경', '영주', '울릉', '청송', '김천'],
-  '경상남도': ['통영', '거제', '남해', '진주', '창원', '하동', '산청', '김해'],
-  '제주도':   ['제주시', '서귀포시'],
-};
+// ---- Map Picker (province → zoom-in → city) ----
+const SVGNS = 'http://www.w3.org/2000/svg';
+let fullVB = [0, 0, 100, 100];   // full-map viewBox, derived from data.fullBox
+let provFont = 14;               // province label size, derived from map width
 
-let activeMapPicker = null;
+// Pad a [x0,y0,x1,y1] box and return a viewBox [x,y,w,h]
+function padBox(box, ratio) {
+  const [x0, y0, x1, y1] = box;
+  const w = x1 - x0, h = y1 - y0;
+  const p = Math.max(w, h) * ratio;
+  return [x0 - p, y0 - p, w + 2 * p, h + 2 * p];
+}
 
 const SHORT_LABEL = {
   '경기도': '경기', '강원도': '강원', '충청북도': '충북', '충청남도': '충남',
@@ -111,90 +109,152 @@ const SHORT_LABEL = {
   '제주도': '제주',
 };
 
+let activeMapPicker = null;
+
 function renderMapPicker() {
   const tpl = document.getElementById('mapPickerTemplate');
   if (!tpl) return;
   const node = tpl.content.firstElementChild.cloneNode(true);
-  wireMapPicker(node);
   chatMessages.appendChild(node);
   activeMapPicker = node;
-  addMapLabels(node);   // must run after append so getBBox() works
+  buildProvinceMap(node);
   lucide.createIcons();
   scrollBottom();
 }
 
-// Place a name label at each region's geometric centre (SVG getBBox)
-function addMapLabels(node) {
-  const svg = node.querySelector('svg.korea-map');
-  if (!svg) return;
-  const SVG_NS = 'http://www.w3.org/2000/svg';
-  const labels = document.createElementNS(SVG_NS, 'g');
-  labels.setAttribute('class', 'map-labels');
+// --- Build the initial provinces-only map ---
+function buildProvinceMap(node) {
+  const data = window.KOREA_MAP;
+  const svg     = node.querySelector('svg.korea-map');
+  const gProv   = node.querySelector('.layer-provinces');
+  const gLabels = node.querySelector('.layer-labels');
+  const backBtn = node.querySelector('.map-zoom-back');
+  if (!data || !svg) return;
 
-  node.querySelectorAll('.map-province').forEach(path => {
-    const region = path.getAttribute('data-region');
-    const isMetro = path.getAttribute('data-type') === 'metro';
-    let box;
-    try { box = path.getBBox(); } catch (_) { return; }
-    if (!box.width) return;
+  fullVB = padBox(data.fullBox, 0.03);
+  provFont = fullVB[2] / 30;
+  svg.setAttribute('viewBox', fullVB.join(' '));
 
-    const text = document.createElementNS(SVG_NS, 'text');
-    text.setAttribute('x', box.x + box.width / 2);
-    text.setAttribute('y', box.y + box.height / 2);
-    text.setAttribute('class', 'map-label' + (isMetro ? ' map-label--metro' : ''));
-    text.textContent = isMetro ? region : (SHORT_LABEL[region] || region);
-    labels.appendChild(text);
+  data.provinces.forEach(p => {
+    const path = document.createElementNS(SVGNS, 'path');
+    path.setAttribute('d', p.d);
+    path.setAttribute('class', 'map-province');
+    path.setAttribute('data-region', p.name);
+    path.addEventListener('click', () => enterProvince(node, p));
+    gProv.appendChild(path);
   });
 
-  svg.appendChild(labels);
+  renderLabels(gLabels, data.provinces.map(p => ({
+    name: SHORT_LABEL[p.name] || p.name, c: p.c,
+  })), provFont, '');
+
+  backBtn.addEventListener('click', () => exitProvince(node));
 }
 
-function wireMapPicker(node) {
-  const provinceStage = node.querySelector('[data-stage="province"]');
-  const cityStage     = node.querySelector('[data-stage="city"]');
-  const cityTitle     = cityStage.querySelector('.map-picker__city-title');
-  const cityGrid      = cityStage.querySelector('.map-city-grid');
-  const backBtn       = cityStage.querySelector('.map-back');
+function renderLabels(gLabels, items, fontSize, extraClass) {
+  gLabels.innerHTML = '';
+  items.forEach(it => {
+    const t = document.createElementNS(SVGNS, 'text');
+    t.setAttribute('x', it.c[0]);
+    t.setAttribute('y', it.c[1]);
+    t.setAttribute('font-size', fontSize);
+    t.setAttribute('class', 'map-label ' + (extraClass || ''));
+    t.textContent = it.name;
+    gLabels.appendChild(t);
+  });
+}
 
-  // Province polygons + metro dots
-  node.querySelectorAll('[data-region]').forEach(el => {
-    el.addEventListener('click', () => {
-      const region = el.getAttribute('data-region');
-      if (CITY_MAP[region]) {
-        // Province → show city picker
-        cityTitle.textContent = `${region} — 세부 도시를 선택하세요`;
-        cityGrid.innerHTML = '';
+// --- Zoom into a province, reveal its cities ---
+function enterProvince(node, p) {
+  if (node.dataset.mode === 'city') return;
+  node.dataset.mode = 'city';
 
-        const allBtn = document.createElement('button');
-        allBtn.type = 'button';
-        allBtn.className = 'map-city-btn map-city-btn--all';
-        allBtn.textContent = `${region} 전체`;
-        allBtn.addEventListener('click', () => selectDestination(region));
-        cityGrid.appendChild(allBtn);
+  const svg     = node.querySelector('svg.korea-map');
+  const gProv   = node.querySelector('.layer-provinces');
+  const gCity   = node.querySelector('.layer-cities');
+  const gLabels = node.querySelector('.layer-labels');
+  const backBtn = node.querySelector('.map-zoom-back');
+  const hint    = node.querySelector('.map-picker__hint-text');
 
-        CITY_MAP[region].forEach(city => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'map-city-btn';
-          btn.textContent = city;
-          btn.addEventListener('click', () => selectDestination(city));
-          cityGrid.appendChild(btn);
-        });
+  // Compute zoom target from the province's mainland box (islands excluded so
+  // far-flung isles like 울릉도 don't shrink the framing), padded & aspect-matched
+  const [minx, miny, maxx, maxy] = p.zbox || p.bbox;
+  const bw = maxx - minx, bh = maxy - miny;
+  const pad = Math.max(bw, bh) * 0.1;
+  const target = fitViewBox(minx - pad, miny - pad, bw + 2 * pad, bh + 2 * pad);
+  const cityFont = target[2] / 34;
 
-        provinceStage.hidden = true;
-        cityStage.hidden = false;
-        scrollBottom();
-      } else {
-        // Metropolitan city → send directly
-        selectDestination(region);
-      }
-    });
+  // Build city shapes
+  gCity.innerHTML = '';
+  p.cities.forEach(c => {
+    const path = document.createElementNS(SVGNS, 'path');
+    path.setAttribute('d', c.d);
+    path.setAttribute('class', 'map-city');
+    path.setAttribute('data-region', c.name);
+    path.addEventListener('click', () => selectDestination(c.name));
+    gCity.appendChild(path);
   });
 
-  backBtn.addEventListener('click', () => {
-    cityStage.hidden = true;
-    provinceStage.hidden = false;
-  });
+  renderLabels(gLabels, p.cities.map(c => ({ name: c.name, c: c.c })), cityFont, 'map-label--city');
+
+  gProv.classList.add('is-dim');
+  gCity.classList.add('is-active');
+  backBtn.hidden = false;
+  if (hint) hint.textContent = `${p.name} — 도시를 클릭하세요`;
+
+  animateViewBox(svg, currentVB(svg), target, 650);
+}
+
+// --- Zoom back out to the full province map ---
+function exitProvince(node) {
+  if (node.dataset.mode !== 'city') return;
+  node.dataset.mode = 'province';
+
+  const data    = window.KOREA_MAP;
+  const svg     = node.querySelector('svg.korea-map');
+  const gProv   = node.querySelector('.layer-provinces');
+  const gCity   = node.querySelector('.layer-cities');
+  const gLabels = node.querySelector('.layer-labels');
+  const backBtn = node.querySelector('.map-zoom-back');
+  const hint    = node.querySelector('.map-picker__hint-text');
+
+  gProv.classList.remove('is-dim');
+  gCity.classList.remove('is-active');
+  backBtn.hidden = true;
+  if (hint) hint.textContent = '지도에서 도를 클릭하면 세부 도시를 선택할 수 있어요';
+
+  renderLabels(gLabels, data.provinces.map(p => ({
+    name: SHORT_LABEL[p.name] || p.name, c: p.c,
+  })), provFont, '');
+
+  animateViewBox(svg, currentVB(svg), fullVB, 550, () => { gCity.innerHTML = ''; });
+}
+
+// --- viewBox helpers ---
+function currentVB(svg) {
+  return svg.getAttribute('viewBox').split(/[ ,]+/).map(Number);
+}
+
+// Expand a box to match the full map's aspect ratio (so nothing distorts)
+function fitViewBox(x, y, w, h) {
+  const ar = fullVB[2] / fullVB[3];
+  let W = w, H = h;
+  if (W / H > ar) H = W / ar; else W = H * ar;
+  return [x - (W - w) / 2, y - (H - h) / 2, W, H];
+}
+
+function animateViewBox(svg, from, to, dur, onDone) {
+  const t0 = performance.now();
+  const ease = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  function frame(now) {
+    const k = Math.min(1, (now - t0) / dur);
+    const e = ease(k);
+    const vb = from.map((f, i) => f + (to[i] - f) * e);
+    svg.setAttribute('viewBox', vb.join(' '));
+    if (k < 1) requestAnimationFrame(frame);
+    else if (onDone) onDone();
+  }
+  requestAnimationFrame(frame);
 }
 
 function hideMapPicker() {
