@@ -336,6 +336,7 @@ async function handleSend() {
   if (!rawText || isPlanning) return;
 
   hideMapPicker();
+  removeQuickReplies();
   appendUserMessage(rawText);
   inputField.value = '';
   inputField.style.height = 'auto';
@@ -615,6 +616,48 @@ function setAgentsActive(indices) {
   });
 }
 
+// ---- Quick Replies ----
+const QUICK_REPLIES = {
+  days:      ['1박 2일', '2박 3일', '3박 4일', '4박 5일', '5박 이상'],
+  purpose:   ['자연·풍경', '맛집 탐방', '역사·문화', '힐링·휴양', '액티비티'],
+  transport: ['대중교통', '자차'],
+  budget:    ['저가', '중간', '고급'],
+  group:     ['혼자', '커플 (2인)', '가족', '친구 2~3명', '친구 4명 이상'],
+};
+
+function detectQuestion(text) {
+  if (/며칠|몇 박|기간|날짜/.test(text)) return 'days';
+  if (/목적|테마|어떤 여행/.test(text)) return 'purpose';
+  if (/이동 수단|교통 수단|대중교통|자차/.test(text)) return 'transport';
+  if (/예산|비용/.test(text)) return 'budget';
+  if (/동행|인원|함께|혼자/.test(text)) return 'group';
+  return null;
+}
+
+function renderQuickReplies(options) {
+  removeQuickReplies();
+  const el = document.createElement('div');
+  el.className = 'quick-replies';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'quick-reply-btn';
+    btn.type = 'button';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => {
+      removeQuickReplies();
+      inputField.value = opt;
+      handleSend();
+    });
+    el.appendChild(btn);
+  });
+  chatMessages.appendChild(el);
+  scrollBottom();
+}
+
+function removeQuickReplies() {
+  chatMessages.querySelectorAll('.quick-replies').forEach(el => el.remove());
+}
+
 // ---- Message helpers ----
 function appendUserMessage(text) {
   const el = document.createElement('div');
@@ -641,6 +684,11 @@ function appendAiMessage(text, lucideIcon = 'target') {
   chatMessages.appendChild(el);
   lucide.createIcons();
   scrollBottom();
+
+  if (!isPlanning) {
+    const qType = detectQuestion(text);
+    if (qType) renderQuickReplies(QUICK_REPLIES[qType]);
+  }
 }
 
 function showTyping() {
