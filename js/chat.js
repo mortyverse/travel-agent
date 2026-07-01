@@ -90,6 +90,128 @@ changeKeyBtn.addEventListener('click', openApiKeyModal);
 let conversationHistory = [];
 let isPlanning = false;
 
+// ---- Map Picker (destination selector) ----
+const CITY_MAP = {
+  '경기도':   ['수원', '성남', '용인', '고양', '파주', '가평', '포천', '여주'],
+  '강원도':   ['춘천', '강릉', '속초', '원주', '평창', '정선', '양양', '삼척'],
+  '충청북도': ['청주', '충주', '제천', '단양', '보은', '영동'],
+  '충청남도': ['천안', '공주', '부여', '보령', '서산', '태안', '아산'],
+  '전라북도': ['전주', '군산', '남원', '무주', '부안', '정읍', '고창'],
+  '전라남도': ['여수', '순천', '목포', '담양', '보성', '해남', '완도', '구례'],
+  '경상북도': ['경주', '안동', '포항', '문경', '영주', '울릉', '청송', '김천'],
+  '경상남도': ['통영', '거제', '남해', '진주', '창원', '하동', '산청', '김해'],
+  '제주도':   ['제주시', '서귀포시'],
+};
+
+let activeMapPicker = null;
+
+const SHORT_LABEL = {
+  '경기도': '경기', '강원도': '강원', '충청북도': '충북', '충청남도': '충남',
+  '전라북도': '전북', '전라남도': '전남', '경상북도': '경북', '경상남도': '경남',
+  '제주도': '제주',
+};
+
+function renderMapPicker() {
+  const tpl = document.getElementById('mapPickerTemplate');
+  if (!tpl) return;
+  const node = tpl.content.firstElementChild.cloneNode(true);
+  wireMapPicker(node);
+  chatMessages.appendChild(node);
+  activeMapPicker = node;
+  addMapLabels(node);   // must run after append so getBBox() works
+  lucide.createIcons();
+  scrollBottom();
+}
+
+// Place a name label at each region's geometric centre (SVG getBBox)
+function addMapLabels(node) {
+  const svg = node.querySelector('svg.korea-map');
+  if (!svg) return;
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const labels = document.createElementNS(SVG_NS, 'g');
+  labels.setAttribute('class', 'map-labels');
+
+  node.querySelectorAll('.map-province').forEach(path => {
+    const region = path.getAttribute('data-region');
+    const isMetro = path.getAttribute('data-type') === 'metro';
+    let box;
+    try { box = path.getBBox(); } catch (_) { return; }
+    if (!box.width) return;
+
+    const text = document.createElementNS(SVG_NS, 'text');
+    text.setAttribute('x', box.x + box.width / 2);
+    text.setAttribute('y', box.y + box.height / 2);
+    text.setAttribute('class', 'map-label' + (isMetro ? ' map-label--metro' : ''));
+    text.textContent = isMetro ? region : (SHORT_LABEL[region] || region);
+    labels.appendChild(text);
+  });
+
+  svg.appendChild(labels);
+}
+
+function wireMapPicker(node) {
+  const provinceStage = node.querySelector('[data-stage="province"]');
+  const cityStage     = node.querySelector('[data-stage="city"]');
+  const cityTitle     = cityStage.querySelector('.map-picker__city-title');
+  const cityGrid      = cityStage.querySelector('.map-city-grid');
+  const backBtn       = cityStage.querySelector('.map-back');
+
+  // Province polygons + metro dots
+  node.querySelectorAll('[data-region]').forEach(el => {
+    el.addEventListener('click', () => {
+      const region = el.getAttribute('data-region');
+      if (CITY_MAP[region]) {
+        // Province → show city picker
+        cityTitle.textContent = `${region} — 세부 도시를 선택하세요`;
+        cityGrid.innerHTML = '';
+
+        const allBtn = document.createElement('button');
+        allBtn.type = 'button';
+        allBtn.className = 'map-city-btn map-city-btn--all';
+        allBtn.textContent = `${region} 전체`;
+        allBtn.addEventListener('click', () => selectDestination(region));
+        cityGrid.appendChild(allBtn);
+
+        CITY_MAP[region].forEach(city => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'map-city-btn';
+          btn.textContent = city;
+          btn.addEventListener('click', () => selectDestination(city));
+          cityGrid.appendChild(btn);
+        });
+
+        provinceStage.hidden = true;
+        cityStage.hidden = false;
+        scrollBottom();
+      } else {
+        // Metropolitan city → send directly
+        selectDestination(region);
+      }
+    });
+  });
+
+  backBtn.addEventListener('click', () => {
+    cityStage.hidden = true;
+    provinceStage.hidden = false;
+  });
+}
+
+function hideMapPicker() {
+  if (!activeMapPicker) return;
+  const el = activeMapPicker;
+  activeMapPicker = null;
+  el.classList.add('is-hidden');
+  setTimeout(() => el.remove(), 350);
+}
+
+function selectDestination(name) {
+  if (isPlanning) return;
+  hideMapPicker();
+  inputField.value = name;
+  handleSend();
+}
+
 // ---- Sidebar mobile toggle ----
 sidebarToggle.addEventListener('click', () => {
   sidebar.classList.toggle('is-open');
@@ -123,6 +245,7 @@ function resetConversation() {
     '몇 가지 질문에 답해주시면, 맞춤형 여행 일정을 만들어 드릴게요.\n' +
     '어디로 여행을 떠나실 예정인가요?'
   );
+  renderMapPicker();
 }
 
 // ---- Send ----
@@ -143,6 +266,7 @@ async function handleSend() {
   const rawText = inputField.value.trim();
   if (!rawText || isPlanning) return;
 
+  hideMapPicker();
   appendUserMessage(rawText);
   inputField.value = '';
   inputField.style.height = 'auto';
@@ -483,3 +607,6 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+
+// ---- Initial map picker (below the hardcoded greeting) ----
+renderMapPicker();

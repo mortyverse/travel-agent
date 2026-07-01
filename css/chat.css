@@ -1085,3 +1085,151 @@ ul { list-style: none; }
   .pv-card { min-height: auto; }
   .pv-progress { width: 200px; }
 }
+
+/* =========================================
+   MAP PICKER (destination selector)
+   ========================================= */
+.map-picker {
+  align-self: flex-start;
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 18px 18px 20px;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.map-picker.is-hidden {
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+}
+
+.map-picker__stage[hidden] { display: none; }
+
+.map-picker__hint {
+  font-size: 12px;
+  color: var(--color-text-body);
+  opacity: 0.6;
+  margin-bottom: 10px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.map-picker__hint svg {
+  width: 14px;
+  height: 14px;
+  color: var(--color-primary);
+  stroke-width: 1.75;
+}
+
+/* SVG map */
+.map-picker__map {
+  display: flex;
+  justify-content: center;
+}
+.map-picker__map svg.korea-map {
+  width: auto;
+  max-width: 100%;
+  height: 62vh;
+  max-height: 560px;
+  display: block;
+}
+
+.map-province {
+  fill: var(--color-surface);
+  stroke: #c4bcb4;
+  stroke-width: 0.8;
+  vector-effect: non-scaling-stroke;
+  cursor: pointer;
+  transition: fill 0.18s, stroke 0.18s;
+}
+.map-province:hover {
+  fill: rgba(241, 146, 123, 0.35);
+  stroke: var(--color-primary);
+  stroke-width: 1.4;
+}
+
+/* Metropolitan cities — tinted to read as distinct from provinces */
+.map-province--metro {
+  fill: rgba(241, 146, 123, 0.55);
+  stroke: #fff;
+  stroke-width: 0.6;
+}
+.map-province--metro:hover {
+  fill: var(--color-primary);
+  stroke: #fff;
+}
+
+/* JS-positioned region labels (getBBox centroids) */
+.map-label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  fill: var(--color-text-dark);
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  font-size: 5px;
+}
+.map-label--metro {
+  font-size: 3.6px;
+  fill: #fff;
+  font-weight: 600;
+}
+
+/* Stage 2: city grid */
+.map-back {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.2s;
+}
+.map-back:hover { color: var(--color-accent-brown); }
+
+.map-picker__city-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-dark);
+  margin-bottom: 12px;
+}
+
+.map-city-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.map-city-btn {
+  padding: 10px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-text-dark);
+  font-family: var(--font-body);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+.map-city-btn:hover {
+  border-color: var(--color-primary);
+  background: rgba(241, 146, 123, 0.1);
+  color: var(--color-primary);
+}
+.map-city-btn--all {
+  grid-column: 1 / -1;
+  border-style: dashed;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .map-picker { max-width: 100%; }
+}
