@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Travel Agent — AI 여행 플래너</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Noto+Sans+KR:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+  <!-- NAV -->
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">
+        <span class="nav__logo-mark">〜</span> Travel Agent
+      </a>
+      <nav class="nav__links">
+        <a href="#agents" class="nav__link">소개</a>
+        <a href="chat.html" class="nav__cta">채팅 시작하기</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero__display-text" aria-hidden="true">TravelAgent</div>
+    <div class="hero__body">
+      <div class="hero__content scroll-obj">
+        <p class="eyebrow">Multi-Agent AI System</p>
+        <h1 class="hero__title">AI 여행 플래너</h1>
+        <p class="hero__sub">
+          당신의 여행 조건을 입력하면,<br />
+          5개의 전문 AI 에이전트가 협력해<br />
+          완벽한 여행 일정을 만들어 드립니다.
+        </p>
+        <a href="chat.html" class="btn-pill btn-pill--filled">여행 계획 시작하기 →</a>
+      </div>
+      <div class="hero__grid scroll-obj">
+        <div class="hero__img-cell hero__img-cell--tall">
+          <img src="images/lotte-tower.jpg" alt="서울 롯데월드타워" class="hero__photo" />
+          <span class="hero__photo-label">서울 · 롯데월드타워</span>
+        </div>
+        <div class="hero__img-col">
+          <div class="hero__img-cell hero__img-cell--wide">
+            <img src="images/hallasan.jpg" alt="제주 한라산" class="hero__photo" />
+            <span class="hero__photo-label">제주 · 한라산</span>
+          </div>
+          <div class="hero__img-row">
+            <div class="hero__img-cell">
+              <img src="images/haeundae.jpg" alt="부산 해운대" class="hero__photo" />
+              <span class="hero__photo-label">부산 · 해운대</span>
+            </div>
+            <div class="hero__img-cell">
+              <img src="images/gyeongbokgung.jpg" alt="서울 경복궁" class="hero__photo" />
+              <span class="hero__photo-label">서울 · 경복궁</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="flow">
+    <div class="flow__inner">
+      <p class="eyebrow scroll-obj">How it works</p>
+      <h2 class="section-title scroll-obj">5개의 에이전트,<br />하나의 완벽한 여정</h2>
+      <div class="flow__steps scroll-obj">
+        <div class="flow__step">
+          <span class="flow__num">01</span>
+          <p>조건 수집</p>
+        </div>
+        <div class="flow__arrow">→</div>
+        <div class="flow__step">
+          <span class="flow__num">02</span>
+          <p>병렬 분석</p>
+        </div>
+        <div class="flow__arrow">→</div>
+        <div class="flow__step">
+          <span class="flow__num">03</span>
+          <p>일정 통합</p>
+        </div>
+        <div class="flow__arrow">→</div>
+        <div class="flow__step">
+          <span class="flow__num">04</span>
+          <p>최종 출력</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AGENTS -->
+  <section class="agents" id="agents">
+    <div class="agents__inner">
+      <p class="eyebrow scroll-obj">Meet the Agents</p>
+      <h2 class="section-title scroll-obj">전문 에이전트 소개</h2>
+      <p class="section-desc scroll-obj">
+        각 에이전트는 독립적으로 전문 영역을 분석하고,<br />
+        오케스트레이터가 결과를 통합합니다.
+      </p>
+
+      <div class="agent-grid">
+
+        <div class="agent-card agent-card--featured scroll-obj">
+          <div class="agent-card__icon"><i data-lucide="target"></i></div>
+          <span class="agent-card__badge">Orchestrator</span>
+          <h3 class="agent-card__name">오케스트레이터</h3>
+          <p class="agent-card__desc">여행 조건 수집 &amp; 총괄. 사용자와 대화하며 6가지 여행 조건을 파악하고, 전문 에이전트에 작업을 배분합니다.</p>
+          <div class="agent-card__tags">
+            <span>여행지 파악</span><span>조건 수집</span><span>병렬 배분</span>
+          </div>
+        </div>
+
+        <div class="agent-card scroll-obj">
+          <div class="agent-card__icon"><i data-lucide="map"></i></div>
+          <span class="agent-card__badge">Course Planner</span>
+          <h3 class="agent-card__name">코스 플래너</h3>
+          <p class="agent-card__desc">날짜별 동선 설계. 이동 거리를 최소화하며 여행 목적에 맞는 장소를 선별하고 최적 동선을 구성합니다.</p>
+          <div class="agent-card__tags">
+            <span>동선 최적화</span><span>목적별 큐레이션</span>
+          </div>
+        </div>
+
+        <div class="agent-card scroll-obj">
+          <div class="agent-card__icon"><i data-lucide="building-2"></i></div>
+          <span class="agent-card__badge">Accommodation Planner</span>
+          <h3 class="agent-card__name">숙소 플래너</h3>
+          <p class="agent-card__desc">예산별 숙소 추천. 동선 중심부에서 가장 가까운 숙소를 예산에 맞게 2가지 이상 추천합니다.</p>
+          <div class="agent-card__tags">
+            <span>예산 맞춤</span><span>접근성 분석</span>
+          </div>
+        </div>
+
+        <div class="agent-card scroll-obj">
+          <div class="agent-card__icon"><i data-lucide="train"></i></div>
+          <span class="agent-card__badge">Transport Planner</span>
+          <h3 class="agent-card__name">교통 플래너</h3>
+          <p class="agent-card__desc">이동 수단 &amp; 비용 정리. 출발지에서 목적지까지, 그리고 현지 이동 경로와 예상 비용을 안내합니다.</p>
+          <div class="agent-card__tags">
+            <span>장거리 이동</span><span>현지 교통</span>
+          </div>
+        </div>
+
+        <div class="agent-card scroll-obj">
+          <div class="agent-card__icon"><i data-lucide="file-text"></i></div>
+          <span class="agent-card__badge">Editor Planner</span>
+          <h3 class="agent-card__name">편집 플래너</h3>
+          <p class="agent-card__desc">최종 일정표 통합 출력. 세 에이전트의 결과를 받아 바로 사용할 수 있는 완성형 여행 일정표를 만듭니다.</p>
+          <div class="agent-card__tags">
+            <span>결과 통합</span><span>일정표 생성</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="cta-section__inner">
+      <div class="cta-section__display" aria-hidden="true">Let's Go</div>
+      <div class="cta-section__content scroll-obj">
+        <h2 class="cta-section__title">지금 바로 시작해보세요</h2>
+        <p class="cta-section__desc">몇 가지 질문에 답하면, AI가 나만의 여행 일정을 완성해 드립니다.</p>
+        <a href="chat.html" class="btn-pill btn-pill--filled btn-pill--large">
+          지금 여행 계획 시작하기 →
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer__inner">
+      <p class="footer__logo">〜 Travel Agent</p>
+      <p class="footer__copy">AI Multi-Agent Travel Planner · Powered by Gemini</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Travel Agent — 채팅</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Noto+Sans+KR:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/chat.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+  <!-- NAV -->
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__back">
+        <span>←</span> 에이전트 소개로
+      </a>
+      <a href="index.html" class="nav__logo">
+        <span class="nav__logo-mark">〜</span> Travel Agent
+      </a>
+      <div class="nav__right">
+        <span class="nav__powered">Powered by Gemini</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- LAYOUT -->
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+
+      <div class="sidebar__section">
+        <p class="sidebar__label">현재 단계</p>
+        <div class="sidebar__stage" id="currentStage">
+          <span class="stage-dot"></span>
+          <span id="stageText">정보 수집 중</span>
+        </div>
+      </div>
+
+      <div class="sidebar__divider"></div>
+
+      <div class="sidebar__section">
+        <p class="sidebar__label">에이전트 파이프라인</p>
+        <ul class="agent-list" id="agentList">
+
+          <li class="agent-item agent-item--active" data-agent="orchestrator">
+            <div class="agent-item__icon"><i data-lucide="target"></i></div>
+            <div class="agent-item__info">
+              <span class="agent-item__name">오케스트레이터</span>
+              <span class="agent-item__role">조건 수집 & 총괄</span>
+            </div>
+            <div class="agent-item__status">
+              <span class="status-indicator status-indicator--active"></span>
+            </div>
+          </li>
+
+          <li class="agent-item" data-agent="course">
+            <div class="agent-item__icon"><i data-lucide="map"></i></div>
+            <div class="agent-item__info">
+              <span class="agent-item__name">코스 플래너</span>
+              <span class="agent-item__role">날짜별 동선 설계</span>
+            </div>
+            <div class="agent-item__status">
+              <span class="status-indicator"></span>
+            </div>
+          </li>
+
+          <li class="agent-item" data-agent="accommodation">
+            <div class="agent-item__icon"><i data-lucide="building-2"></i></div>
+            <div class="agent-item__info">
+              <span class="agent-item__name">숙소 플래너</span>
+              <span class="agent-item__role">예산별 숙소 추천</span>
+            </div>
+            <div class="agent-item__status">
+              <span class="status-indicator"></span>
+            </div>
+          </li>
+
+          <li class="agent-item" data-agent="transport">
+            <div class="agent-item__icon"><i data-lucide="train"></i></div>
+            <div class="agent-item__info">
+              <span class="agent-item__name">교통 플래너</span>
+              <span class="agent-item__role">이동 수단 & 비용</span>
+            </div>
+            <div class="agent-item__status">
+              <span class="status-indicator"></span>
+            </div>
+          </li>
+
+          <li class="agent-item" data-agent="editor">
+            <div class="agent-item__icon"><i data-lucide="file-text"></i></div>
+            <div class="agent-item__info">
+              <span class="agent-item__name">편집 플래너</span>
+              <span class="agent-item__role">최종 일정표 통합</span>
+            </div>
+            <div class="agent-item__status">
+              <span class="status-indicator"></span>
+            </div>
+          </li>
+
+        </ul>
+      </div>
+
+      <div class="sidebar__divider"></div>
+
+      <div class="sidebar__section">
+        <button class="sidebar__reset" id="resetBtn"><i data-lucide="rotate-ccw"></i> 새 여행 계획</button>
+        <button class="sidebar__reset" id="changeKeyBtn" style="margin-top:8px;"><i data-lucide="key"></i> API 키 변경</button>
+      </div>
+
+    </aside>
+
+    <!-- CHAT MAIN -->
+    <main class="chat-main">
+
+      <!-- Chat Header -->
+      <div class="chat-header">
+        <div class="chat-header__info">
+          <h1 class="chat-header__title">✈️ AI 여행 플래너</h1>
+          <p class="chat-header__sub">여행 조건을 알려주시면 맞춤 일정을 만들어 드릴게요</p>
+        </div>
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="사이드바 열기">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+
+      <!-- Messages -->
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg msg--ai">
+          <div class="msg__avatar"><i data-lucide="target"></i></div>
+          <div class="msg__body">
+            <div class="msg__bubble">
+              <p>안녕하세요! 저는 AI 여행 플래너입니다. ✈️</p>
+              <p>몇 가지 질문에 답해주시면, 맞춤형 여행 일정을 만들어 드릴게요.</p>
+              <p>어디로 여행을 떠나실 예정인가요?<br/><span class="msg__hint">(예: 제주도, 경주, 강릉, 전주 등)</span></p>
+            </div>
+            <span class="msg__time" id="initTime"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="chat-input-wrap">
+        <div class="chat-input">
+          <textarea
+            class="chat-input__field"
+            id="inputField"
+            placeholder="메시지를 입력하세요..."
+            rows="1"
+          ></textarea>
+          <button class="chat-input__send" id="sendBtn" aria-label="전송">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M22 2L11 13" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+        <p class="chat-input__hint">Enter로 전송 &middot; Shift+Enter로 줄바꿈</p>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Mobile overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- API Key Modal -->
+  <div class="apikey-modal" id="apikeyModal" aria-hidden="true">
+    <div class="apikey-modal__bg"></div>
+    <div class="apikey-modal__card">
+      <div class="apikey-modal__icon"><i data-lucide="key"></i></div>
+      <h2 class="apikey-modal__title">Gemini API 키 입력</h2>
+      <p class="apikey-modal__desc">
+        채팅을 시작하려면 Google AI Studio에서 발급받은<br />
+        Gemini API 키를 입력해주세요.<br />
+        키는 브라우저에만 저장되며 외부로 전송되지 않습니다.
+      </p>
+      <div class="apikey-modal__input-wrap">
+        <input
+          type="password"
+          id="apikeyInput"
+          class="apikey-modal__input"
+          placeholder="AIzaSy..."
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button class="apikey-modal__toggle" id="apikeyToggle" aria-label="키 표시/숨기기">
+          <i data-lucide="eye"></i>
+        </button>
+      </div>
+      <button class="apikey-modal__btn" id="apikeyConfirm">시작하기 →</button>
+      <a href="https://aistudio.google.com/apikey" target="_blank" class="apikey-modal__link">
+        <i data-lucide="external-link"></i> API 키 발급받기
+      </a>
+    </div>
+  </div>
+
+  <!-- Planning View Overlay -->
+  <div class="planning-view" id="planningView" aria-hidden="true">
+    <div class="planning-view__bg"></div>
+    <div class="planning-view__panel">
+
+      <div class="planning-view__top">
+        <p class="planning-view__eyebrow">AI Agent Pipeline</p>
+        <h2 class="planning-view__title">✈️ 여행 일정 생성 중</h2>
+        <p class="planning-view__desc">3개의 전문 에이전트가 병렬로 분석하고 있습니다</p>
+        <div class="pv-progress">
+          <div class="pv-progress__bar" id="pvProgressBar"></div>
+        </div>
+      </div>
+
+      <div class="planning-view__cards">
+
+        <div class="pv-card" id="pvCard-course">
+          <div class="pv-card__head">
+            <span class="pv-card__icon"><i data-lucide="map"></i></span>
+            <span class="pv-card__name">코스 플래너</span>
+            <span class="pv-card__status" id="pvStatus-course">대기 중</span>
+          </div>
+          <ul class="pv-card__log" id="pvLog-course"></ul>
+        </div>
+
+        <div class="pv-card" id="pvCard-accommodation">
+          <div class="pv-card__head">
+            <span class="pv-card__icon"><i data-lucide="building-2"></i></span>
+            <span class="pv-card__name">숙소 플래너</span>
+            <span class="pv-card__status" id="pvStatus-accommodation">대기 중</span>
+          </div>
+          <ul class="pv-card__log" id="pvLog-accommodation"></ul>
+        </div>
+
+        <div class="pv-card" id="pvCard-transport">
+          <div class="pv-card__head">
+            <span class="pv-card__icon"><i data-lucide="train"></i></span>
+            <span class="pv-card__name">교통 플래너</span>
+            <span class="pv-card__status" id="pvStatus-transport">대기 중</span>
+          </div>
+          <ul class="pv-card__log" id="pvLog-transport"></ul>
+        </div>
+
+      </div>
+
+      <div class="pv-editor-phase" id="pvEditorPhase">
+        <p class="pv-editor-phase__text">
+          <span class="pv-editor-spin"><i data-lucide="loader"></i></span>
+          편집 플래너가 최종 일정표를 통합하고 있습니다…
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/chat.js"></script>
+</body>
+</html>
