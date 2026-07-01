@@ -103,6 +103,20 @@ function padBox(box, ratio) {
   return [x0 - p, y0 - p, w + 2 * p, h + 2 * p];
 }
 
+// Resize the SVG element to match a viewBox's aspect ratio, filling the card
+// as much as possible. Keeps the zoomed province edge-to-edge (no letterbox),
+// so a wide province like 경남 renders large instead of shrunk into a tall frame.
+function sizeMapTo(svg, boxW, boxH) {
+  const wrap = svg.parentElement;
+  const maxW = wrap.clientWidth || 480;
+  const maxH = Math.min(window.innerHeight * 0.74, 680);
+  const ar = boxW / boxH;
+  let W = maxW, H = maxW / ar;
+  if (H > maxH) { H = maxH; W = maxH * ar; }
+  svg.style.width = W + 'px';
+  svg.style.height = H + 'px';
+}
+
 const SHORT_LABEL = {
   '경기도': '경기', '강원도': '강원', '충청북도': '충북', '충청남도': '충남',
   '전라북도': '전북', '전라남도': '전남', '경상북도': '경북', '경상남도': '경남',
@@ -134,6 +148,7 @@ function buildProvinceMap(node) {
   fullVB = padBox(data.fullBox, 0.03);
   provFont = fullVB[2] / 30;
   svg.setAttribute('viewBox', fullVB.join(' '));
+  sizeMapTo(svg, fullVB[2], fullVB[3]);
 
   data.provinces.forEach(p => {
     const path = document.createElementNS(SVGNS, 'path');
@@ -180,9 +195,10 @@ function enterProvince(node, p) {
   // far-flung isles like 울릉도 don't shrink the framing), padded & aspect-matched
   const [minx, miny, maxx, maxy] = p.zbox || p.bbox;
   const bw = maxx - minx, bh = maxy - miny;
-  const pad = Math.max(bw, bh) * 0.1;
-  const target = fitViewBox(minx - pad, miny - pad, bw + 2 * pad, bh + 2 * pad);
-  const cityFont = target[2] / 34;
+  const pad = Math.max(bw, bh) * 0.05;
+  const target = [minx - pad, miny - pad, bw + 2 * pad, bh + 2 * pad];
+  const cityFont = target[2] / 40;
+  sizeMapTo(svg, target[2], target[3]);
 
   // Build city shapes
   gCity.innerHTML = '';
@@ -227,20 +243,13 @@ function exitProvince(node) {
     name: SHORT_LABEL[p.name] || p.name, c: p.c,
   })), provFont, '');
 
+  sizeMapTo(svg, fullVB[2], fullVB[3]);
   animateViewBox(svg, currentVB(svg), fullVB, 550, () => { gCity.innerHTML = ''; });
 }
 
 // --- viewBox helpers ---
 function currentVB(svg) {
   return svg.getAttribute('viewBox').split(/[ ,]+/).map(Number);
-}
-
-// Expand a box to match the full map's aspect ratio (so nothing distorts)
-function fitViewBox(x, y, w, h) {
-  const ar = fullVB[2] / fullVB[3];
-  let W = w, H = h;
-  if (W / H > ar) H = W / ar; else W = H * ar;
-  return [x - (W - w) / 2, y - (H - h) / 2, W, H];
 }
 
 function animateViewBox(svg, from, to, dur, onDone) {
